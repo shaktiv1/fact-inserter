@@ -1,12 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_expects_json import expects_json
 import boto3
-import time
-from boto3 import exceptions
+
 
 def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
-    client = boto3.client('medialive', region_name=region_name, aws_access_key_id="access_key",
-                aws_secret_access_key="secret_key")
+    client = boto3.client('medialive', region_name=region_name, aws_access_key_id="acess_key",
+                aws_secret_access_key="secret")
 
     insert_action = {
         'ScheduleActionSettings': {
@@ -14,10 +13,10 @@ def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
                 'Image': {
                     'Uri': image_s3_path
                 },
-                'ImageX': 1440,
-                'ImageY': 0,
-                'Width': 480,
-                'Height': 270,
+                'ImageX': 0,  # X position in pixels
+                'ImageY': 50,  # Y position in pixels
+                'Width': 300,  # Width in pixels
+                'Height': 70,  # Height in pixels
                 'Layer': 1
             }
         },
@@ -26,6 +25,7 @@ def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
         }
     }
 
+    # Define the schedule action to remove the image overla
     remove_action = {
         'ScheduleActionSettings': {
             'StaticImageDeactivateSettings': {
@@ -37,6 +37,7 @@ def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
         }
     }
 
+    # Insert the overlay
     client.batch_update_schedule(
         ChannelId=channel_id,
         Creates={
@@ -49,10 +50,10 @@ def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
             ]
         }
     )
-    print('Inserted the overlay')
+    print('Updated the overlay')
 
     time.sleep(30)
-
+    #
     # Remove the overlay
     client.batch_update_schedule(
         ChannelId=channel_id,
@@ -66,7 +67,6 @@ def schedule_image_overlay(channel_id, image_s3_path, region_name='ap-south-1'):
             ]
         }
     )
-    print('Removed the Overlay')
 
 app = Flask(__name__)
 
@@ -81,7 +81,7 @@ schema = {
     'additionalProperties': False
 }
 
-@app.route('/overlay-image', methods=['POST'])
+@app.route('/overlay', methods=['POST'])
 @expects_json(schema)
 def overlay():
     try:
